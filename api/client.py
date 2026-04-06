@@ -168,5 +168,8 @@ def create_record(
         raise APIError("create_record", table_name,
                        f"API success=False: {body_resp.get('message', body_resp)}")
 
-    log.info("[create_record] %s created successfully", table_name)
-    return body_resp.get("data") or {}
+    # API returns data as a list with the created record at index 0
+    data = body_resp.get("data") or []
+    created = data[0] if data else {}
+    log.info("[create_record] %s created → uuid=%s", table_name, created.get("id", "?"))
+    return created
