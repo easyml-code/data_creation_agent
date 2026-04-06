@@ -1,19 +1,21 @@
 """
-Entry point — create Flask app, register blueprints, run.
+Entry point — create FastAPI app, include router, run with uvicorn.
 """
 
-from flask import Flask
+import uvicorn
+from fastapi import FastAPI
 import config
-from routes import bp
+from routes import router
 
 
-def create_app() -> Flask:
-    app = Flask(__name__)
-    app.register_blueprint(bp)
+def create_app() -> FastAPI:
+    app = FastAPI()
+    app.include_router(router)
     return app
 
 
+app = create_app()
+
 if __name__ == "__main__":
-    app = create_app()
     print(f"Starting Invoice → GRN agent on port {config.PORT}")
-    app.run(host="0.0.0.0", port=config.PORT, debug=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=config.PORT, reload=True)

@@ -1,18 +1,25 @@
 """
-API routes — single Blueprint, registered in main.py.
+API routes — FastAPI router, included in main.py.
 """
 
-from flask import Blueprint, request, jsonify
+from fastapi import APIRouter
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+from typing import Any
 
 from pipeline import run_pipeline
 from api.exceptions import APIError, ValidationError
 from api.exceptions import LookupError as MasterLookupError
 
-bp = Blueprint("invoice", __name__, url_prefix="/api/v1")
+router = APIRouter(prefix="/api/v1")
 
 
-@bp.route("/process-invoice", methods=["POST"])
-def process_invoice():
+class InvoiceRequest(BaseModel):
+    invoice_data: dict[str, Any]
+
+
+@router.post("/process-invoice")
+async def process_invoice(body: InvoiceRequest):
     """
     POST /api/v1/process-invoice
 
@@ -40,19 +47,9 @@ def process_invoice():
         502 — upstream API error
         500 — unexpected server error
     """
-    body = request.get_json(silent=True)
-
-    if not body:
-        return _error(400, "INVALID_JSON", "Request body must be valid JSON.")
-
-    invoice_data = body.get("invoice_data")
-    if not invoice_data:
-        return _error(400, "MISSING_FIELD",
-                      "Request body must contain key 'invoice_data'.")
-
     try:
-        result = run_pipeline(invoice_data)
-        return jsonify({"success": True, "data": result}), 200
+        result = run_pipeline(body.invoice_data)
+        return {"success": True, "data": result}
 
     except ValidationError as e:
         return _error(400, "VALIDATION_ERROR", str(e))
@@ -71,16 +68,15 @@ def process_invoice():
         })
 
     except Exception as e:
-        # Log full traceback server-side; return sanitised message to client
         import traceback
         traceback.print_exc()
         return _error(500, "INTERNAL_ERROR",
                       f"Unexpected error: {type(e).__name__}: {e}")
 
 
-@bp.route("/health", methods=["GET"])
-def health():
-    return jsonify({"status": "ok"}), 200
+@router.get("/health")
+async def health():
+    return {"status": "ok"}
 
 
 # ── Helper ────────────────────────────────────────────────────────────────────
@@ -89,4 +85,4 @@ def _error(status: int, code: str, message: str, detail: dict = None):
     body = {"success": False, "error": {"code": code, "message": message}}
     if detail:
         body["error"]["detail"] = detail
-    return jsonify(body), status
+    return JSONResponse(status_code=status, content=body)
