@@ -50,8 +50,8 @@ def handle_supplier(invoice_data: dict) -> dict:
 
     if existing:
         site          = existing[0]
-        supplier_id   = site["SUPPLIER_REF"]
-        site_id       = site["SUPPLIER_SITE_ID"]
+        supplier_id   = site["supplier_ref"]
+        site_id       = site["supplier_site_id"]
         return {
             "supplier_id":      supplier_id,
             "supplier_site_id": site_id,
@@ -64,22 +64,22 @@ def handle_supplier(invoice_data: dict) -> dict:
                                     field="PAN_NUMBER", value=pan)
 
     if existing_supplier:
-        supplier_id = existing_supplier[0]["SUPPLIER_ID"]
+        supplier_id = existing_supplier[0]["supplier_id"]
     else:
         # ── Create SUPPLIER ───────────────────────────────────────────────────
         supplier_id   = gen_supplier_id()
         supplier_code = gen_supplier_code(name)
 
         create_record(oid_sup, {
-            "SUPPLIER_ID":       supplier_id,
-            "SUPPLIER_CODE":     supplier_code,
-            "LEGAL_NAME":        name,
-            "PAN_NUMBER":        pan,
-            "SUPPLIER_CLASS":    "PREFERRED",
-            "PAN_VERIFIED_FLAG": True,
-            "SUPPLIER_TYPE":     "COMPANY",
-            "MSME_FLAG":         False,
-            "EFFECTIVE_FROM":    today()
+            "supplier_id":       supplier_id,
+            "supplier_code":     supplier_code,
+            "legal_name":        name,
+            "pan_number":        pan,
+            "supplier_class":    "PREFERRED",
+            "pan_verified_flag": True,
+            "supplier_type":     "COMPANY",
+            "msme_flag":         False,
+            "effective_from":    today()
         }, table_name="SUPPLIER")
 
     # ── Create SUPPLIER_SITE ──────────────────────────────────────────────────
@@ -88,21 +88,21 @@ def handle_supplier(invoice_data: dict) -> dict:
     site_id     = gen_supplier_site_id()
 
     create_record(oid_site, {
-        "SUPPLIER_SITE_ID":        site_id,
-        "SUPPLIER_LEGAL_NAME_REF": name,
-        "SUPPLIER_PAN_REF":        pan,
-        "GSTIN":                   gstin,
-        "COUNTRY_ID":              country_id,
-        "STATE_ID":                state_id,
-        "BUILDING_NAME":           building,
-        "FLOOR_UNIT":              floor_unit,
-        "CITY":                    city,
-        "PIN_CODE":                str(pin_code),
-        "SEZ_FLAG":                False,
-        "SUPPLIER_REF":            supplier_id,
-        "DEFAULT_DISPATCH_FLAG":   True,
-        "DEFAULT_BILLING_FLAG":    True,
-        "EFFECTIVE_FROM":          today()
+        "supplier_site_id":        site_id,
+        "supplier_legal_name_ref": name,
+        "supplier_pan_ref":        pan,
+        "gstin":                   gstin,
+        "country_id":              country_id,
+        "state_id":                state_id,
+        "building_name":           building,
+        "floor_unit":              floor_unit,
+        "city":                    city,
+        "pin_code":                str(pin_code),
+        "sez_flag":                False,
+        "supplier_ref":            supplier_id,
+        "default_dispatch_flag":   True,
+        "default_billing_flag":    True,
+        "effective_from":          today()
     }, table_name="SUPPLIER_SITE")
 
     return {

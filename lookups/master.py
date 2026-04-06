@@ -34,82 +34,82 @@ def _fetch_first(table_api_name: str, id_field: str) -> str:
 # ── Geographic ────────────────────────────────────────────────────────────────
 
 def lookup_country_id(country_name: str) -> str:
-    """COUNTRY.COUNTRY_NAME → COUNTRY.COUNTRY_ID"""
-    return _fetch_one("COUNTRY", "COUNTRY_NAME", country_name, "COUNTRY_ID")
+    """COUNTRY.COUNTRY_NAME → COUNTRY.country_id"""
+    return _fetch_one("COUNTRY", "COUNTRY_NAME", country_name, "country_id")
 
 
 def lookup_state_id(state_name: str) -> str:
-    """STATE.STATE_NAME → STATE.STATE_ID"""
-    return _fetch_one("STATE", "STATE_NAME", state_name, "STATE_ID")
+    """STATE.STATE_NAME → STATE.state_id"""
+    return _fetch_one("STATE", "STATE_NAME", state_name, "state_id")
 
 
 # ── Financial ─────────────────────────────────────────────────────────────────
 
 def lookup_currency_id(currency_code: str) -> str:
-    """CURRENCY.CURRENCY_CODE → CURRENCY.CURRENCY_ID"""
-    return _fetch_one("CURRENCY", "CURRENCY_CODE", currency_code, "CURRENCY_ID")
+    """CURRENCY.CURRENCY_CODE → CURRENCY.currency_id"""
+    return _fetch_one("CURRENCY", "CURRENCY_CODE", currency_code, "currency_id")
 
 
 def lookup_payment_term_id() -> str:
     """Return first available PAYMENT_TERMS record (invoice doesn't specify this)."""
-    return _fetch_first("PAYMENT_TERMS", "PAYMENT_TERM_ID")
+    return _fetch_first("PAYMENT_TERMS", "payment_term_id")
 
 
 # ── Tax ───────────────────────────────────────────────────────────────────────
 
 def lookup_tax_rate_id() -> str:
     """Return first available TAX_RATE record."""
-    return _fetch_first("TAX_RATE", "TAX_RATE_ID")
+    return _fetch_first("TAX_RATE", "tax_rate_id")
 
 
 # ── Item / Goods ─────────────────────────────────────────────────────────────
 
 def lookup_hsn_id(hsn_code: str) -> str:
-    """HSN_SAC.HSN_CODE → HSN_SAC.HSN_ID"""
-    return _fetch_one("HSN_SAC", "HSN_CODE", hsn_code, "HSN_ID")
+    """HSN_SAC.HSN_CODE → HSN_SAC.hsn_id"""
+    return _fetch_one("HSN_SAC", "HSN_CODE", hsn_code, "hsn_id")
 
 
 def lookup_uom_id(uom_code: str) -> str:
-    """UOM.UOM_CODE → UOM.UOM_ID"""
-    return _fetch_one("UOM", "UOM_CODE", uom_code, "UOM_ID")
+    """UOM.UOM_CODE → UOM.uom_id"""
+    return _fetch_one("UOM", "UOM_CODE", uom_code, "uom_id")
 
 
 def lookup_item_id(item_name: str) -> str:
     """
-    Try to match ITEM.ITEM_NAME → ITEM.ITEM_ID.
+    Try to match ITEM.ITEM_NAME → ITEM.item_id.
     Falls back to first available item if no exact match.
     """
     oid     = get_object_id("ITEM")
     records = get_records(oid, table_name="ITEM", field="ITEM_NAME", value=item_name)
     if records:
-        return records[0]["ITEM_ID"]
+        return records[0]["item_id"]
     # Fallback: use the first item in the table
     records = get_records(oid, table_name="ITEM", limit=1)
     if not records:
         raise MasterLookupError("ITEM", "ITEM_NAME", item_name)
-    return records[0]["ITEM_ID"]
+    return records[0]["item_id"]
 
 
 # ── Organisational ────────────────────────────────────────────────────────────
 
 def lookup_plant_id() -> str:
-    return _fetch_first("PLANT", "PLANT_ID")
+    return _fetch_first("PLANT", "plant_id")
 
 
 def lookup_cost_center_id() -> str:
-    return _fetch_first("COST_CENTER", "COST_CENTER_ID")
+    return _fetch_first("COST_CENTER", "cost_center_id")
 
 
 def lookup_project_id() -> str:
-    return _fetch_first("PROJECT_WBS", "PROJECT_WBS_ID")
+    return _fetch_first("PROJECT_WBS", "project_wbs_id")
 
 
 def lookup_profit_center_id() -> str:
-    return _fetch_first("PROFIT_CENTER", "PROFIT_CENTER_ID")
+    return _fetch_first("PROFIT_CENTER", "profit_center_id")
 
 
 def lookup_gl_account_id() -> str:
-    return _fetch_first("GL_ACCOUNT", "GL_ACCOUNT_ID")
+    return _fetch_first("GL_ACCOUNT", "gl_account_id")
 
 
 def lookup_weight_uom_id() -> str:
@@ -121,4 +121,4 @@ def lookup_weight_uom_id() -> str:
             return lookup_uom_id(code)
         except MasterLookupError:
             continue
-    return _fetch_first("UOM", "UOM_ID")
+    return _fetch_first("UOM", "uom_id")

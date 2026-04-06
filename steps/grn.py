@@ -65,37 +65,37 @@ def handle_grn(
         grn_number = gen_grn_number()
 
         create_record(oid_gh, {
-            "GRN_ID":                  grn_id,
-            "GRN_NUMBER":              grn_number,
-            "GRN_DATE":                grn_date,
-            "TOTAL_RECEIVED_QTY":      qty,
-            "TOTAL_RECEIVED_AMOUNT":   total_amt,
-            "WEIGHT_UOM_ID":           weight_uom,
-            "QC_STATUS":               "PENDING",
-            "GRN_STATUS":              "OPEN",
-            "PO_LINE_REF":             po_line_id,
-            "SUPPLIER_SITE_REF":       supplier_site_id,
-            "LEGAL_ENTITY_SITE_REF":   legal_entity_site_id,
-            "GL_ACCOUNT_REF":          gl_acct_id,
-            "EFFECTIVE_FROM":          grn_date
+            "grn_id":                  grn_id,
+            "grn_number":              grn_number,
+            "grn_date":                grn_date,
+            "total_received_qty":      qty,
+            "total_received_amount":   total_amt,
+            "weight_uom_id":           weight_uom,
+            "qc_status":               "PENDING",
+            "grn_status":              "OPEN",
+            "po_line_ref":             po_line_id,
+            "supplier_site_ref":       supplier_site_id,
+            "legal_entity_site_ref":   legal_entity_site_id,
+            "gl_account_ref":          gl_acct_id,
+            "effective_from":          grn_date
         }, table_name="GRN_HEADER")
 
         # ── Create GRN_LINE ───────────────────────────────────────────────────
         grn_line_id = gen_grn_line_id()
 
         create_record(oid_gl, {
-            "GRN_LINE_ID":      grn_line_id,
-            "GRN_LINE_NUMBER":  1,
-            "ITEM_DESCRIPTION": desc,
-            "UOM_ID":           uom_id,
-            "RECEIVED_QTY":     qty,
-            "WEIGHT_UOM":       "KGS",
-            "QC_REQUIRED_FLAG": False,
-            "QC_RESULT":        "ACCEPTED",
-            "GRN_LINE_STATUS":  "OPEN",
-            "GRN_REF":          grn_id,
-            "ITEM_REF":         item_id,
-            "EFFECTIVE_FROM":   grn_date
+            "grn_line_id":      grn_line_id,
+            "grn_line_number":  1,
+            "item_description": desc,
+            "uom_id":           uom_id,
+            "received_qty":     qty,
+            "weight_uom":       "KGS",
+            "qc_required_flag": False,
+            "qc_result":        "ACCEPTED",
+            "grn_line_status":  "OPEN",
+            "grn_ref":          grn_id,
+            "item_ref":         item_id,
+            "effective_from":   grn_date
         }, table_name="GRN_LINE")
 
         results.append({

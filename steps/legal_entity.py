@@ -53,7 +53,7 @@ def handle_legal_entity(invoice_data: dict) -> dict:
                               field="LEGAL_ENTITY_PAN", value=pan)
 
     if existing_le:
-        le_id = existing_le[0]["LEGAL_ENTITY_ID"]
+        le_id = existing_le[0]["legal_entity_id"]
 
         # ── 2b. Check if LEGAL_ENTITY_SITE exists for this LE ────────────────
         existing_les = get_records(oid_les, table_name="LEGAL_ENTITY_SITE",
@@ -61,7 +61,7 @@ def handle_legal_entity(invoice_data: dict) -> dict:
         if existing_les:
             return {
                 "legal_entity_id":      le_id,
-                "legal_entity_site_id": existing_les[0]["LEGAL_ENTITY_SITE_ID"],
+                "legal_entity_site_id": existing_les[0]["legal_entity_site_id"],
                 "created":              False
             }
         # LE exists but no site — fall through to create site only
@@ -71,11 +71,11 @@ def handle_legal_entity(invoice_data: dict) -> dict:
         le_id       = gen_legal_entity_id()
 
         create_record(oid_le, {
-            "LEGAL_ENTITY_ID":            le_id,
-            "LEGAL_ENTITY_NAME":          name,
-            "LEGAL_ENTITY_PAN":           pan,
-            "LEGAL_ENTITY_BASE_CURRENCY": currency_id,
-            "EFFECTIVE_FROM":             today()
+            "legal_entity_id":            le_id,
+            "legal_entity_name":          name,
+            "legal_entity_pan":           pan,
+            "legal_entity_base_currency": currency_id,
+            "effective_from":             today()
         }, table_name="LEGAL_ENTITY")
 
     # ── Create LEGAL_ENTITY_SITE ──────────────────────────────────────────────
@@ -84,18 +84,18 @@ def handle_legal_entity(invoice_data: dict) -> dict:
     le_site_id = gen_legal_entity_site_id()
 
     create_record(oid_les, {
-        "LEGAL_ENTITY_SITE_ID":   le_site_id,
-        "GSTIN":                  gstin,
-        "COUNTRY_ID":             country_id,
-        "STATE_ID":               state_id,
-        "BUILDING_NAME":          building,
-        "FLOOR_UNIT":             floor_unit,
-        "CITY":                   city,
-        "PIN_CODE":               str(pin_code),
-        "DEFAULT_SHIPPING_FLAG":  True,
-        "DEFAULT_BILLING_FLAG":   True,
-        "LEGAL_ENTITY_REF":       le_id,
-        "EFFECTIVE_FROM":         today()
+        "legal_entity_site_id":   le_site_id,
+        "gstin":                  gstin,
+        "country_id":             country_id,
+        "state_id":               state_id,
+        "building_name":          building,
+        "floor_unit":             floor_unit,
+        "city":                   city,
+        "pin_code":               str(pin_code),
+        "default_shipping_flag":  True,
+        "default_billing_flag":   True,
+        "legal_entity_ref":       le_id,
+        "effective_from":         today()
     }, table_name="LEGAL_ENTITY_SITE")
 
     return {
