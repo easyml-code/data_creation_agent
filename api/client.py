@@ -21,10 +21,11 @@ _HEADERS_GET = {
 
 
 def _headers_post() -> dict:
+    # No Content-Type here — requests sets it automatically to
+    # multipart/form-data (with boundary) when using files=
     return {
-        "Content-Type": "application/json;charset=UTF-8",
-        "Accept":       "application/json",
-        "userId":       config.USER_ID,
+        "Accept":  "application/json",
+        "userId":  config.USER_ID,
     }
 
 
@@ -131,16 +132,17 @@ def create_record(
     Insert a new row into a dynamic table.
     Wraps the payload in the envelope the API expects and returns the created record dict.
     """
-    body = {
-        "jsonInput":      payload,
-        "storageService": "DATABASE_POSTGRES"
+    # The API expects multipart/form-data with jsonInput as a JSON string field
+    form_data = {
+        "jsonInput":      (None, json.dumps(payload)),
+        "storageService": (None, "DATABASE_POSTGRES"),
     }
     url = f"{config.USAGE_URL}/{config.API_VERSION}/object/{object_id}/data"
-    log.debug("[create_record] POST %s | payload: %s", url, json.dumps(body))
+    log.debug("[create_record] POST %s (multipart) | jsonInput: %s", url, json.dumps(payload))
     try:
         resp = requests.post(
             url,
-            data=json.dumps(body),
+            files=form_data,
             headers=_headers_post(),
             timeout=30
         )
@@ -154,8 +156,8 @@ def create_record(
     log.debug("[create_record] %s → HTTP %s | body: %s", table_name, resp.status_code, resp.text[:500])
 
     if not resp.ok:
-        log.error("[create_record] HTTP %s for %s | request payload: %s | response: %s",
-                  resp.status_code, table_name, json.dumps(body), resp.text)
+        log.error("[create_record] HTTP %s for %s | jsonInput: %s | response: %s",
+                  resp.status_code, table_name, json.dumps(payload), resp.text)
         raise APIError("create_record", table_name,
                        f"HTTP error creating record",
                        status_code=resp.status_code, body=resp.text)
