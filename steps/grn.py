@@ -13,7 +13,7 @@ from api.client import get_object_id, create_record
 from api.helpers import (
     today, gen_grn_id, gen_grn_line_id, gen_grn_number, get_optional,
 )
-from lookups.master import lookup_uom_id, lookup_gl_account_id, lookup_item_id, lookup_weight_uom_id
+from lookups.master import lookup_gl_account_id, lookup_item_id, lookup_weight_uom_id
 
 log = logging.getLogger(__name__)
 STEP = "Step 4 | GRN"
@@ -58,12 +58,11 @@ def handle_grn(
         desc         = po_line.get("description") or f"Line {idx + 1}"
         qty          = float(po_line.get("quantity") or 0)
         unit_price   = float(po_line.get("unit_price") or 0)
-        uom_code     = po_line.get("uom_code") or "EA"
+        # uom_id is already the resolved string uom_id from po_lines — no lookup needed
+        uom_str      = po_line.get("uom_id") or "UOM1"
 
         inv_item  = line_items[idx] if idx < len(line_items) else {}
         total_amt = float(inv_item.get("total") or (qty * unit_price))
-
-        uom_str   = lookup_uom_id(uom_code)    # string uom_id like "UOM1"
         item_uuid = lookup_item_id(desc)        # UUID id of ITEM
 
         grn_id_str = gen_grn_id()

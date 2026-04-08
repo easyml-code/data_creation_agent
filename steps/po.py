@@ -84,21 +84,119 @@ def handle_po(
         po_rows = get_records(oid_pl, table_name="PO_LINE",
                               field="PO_HEADER_REF", value=po_uuid,
                               limit=len(line_items) + 20)
-        log.info("[%s] Fetched %d PO_LINE(s) for po_uuid=%s", STEP, len(po_rows), po_uuid)
+        log.info("[%s] Fetched %d existing PO_LINE(s) for po_uuid=%s", STEP, len(po_rows), po_uuid)
 
-        po_lines = [
-            {
-                "po_line_id":  r["id"],              # UUID id — used as po_line_ref in GRN
-                "line_number": r.get("line_number"),
-                "description": r.get("item_description", ""),
-                "quantity":    r.get("ordered_quantity"),
-                "unit_price":  r.get("unit_price"),
-                "hsn_code":    r.get("hsn_id", ""),
-                "uom_code":    r.get("uom_id", ""),
-            }
-            for r in po_rows
-        ]
+        # Build matched po_lines — try to match each invoice line to an existing PO line.
+        # Match key: hsn_id + quantity + unit_price (all 3 must match).
+        # Unmatched invoice lines → create new PO_LINE.
 
+        # Index existing lines by (hsn_id, qty, unit_price) for O(1) lookup
+        existing_index: dict[tuple, dict] = {}
+        for r in po_rows:
+            key = (
+                str(r.get("hsn_id", "")).strip(),
+                float(r.get("ordered_quantity") or 0),
+                float(r.get("unit_price") or 0),
+            )
+            existing_index[key] = r
+
+        po_lines   = []
+        new_lines  = []   # invoice items with no matching PO line
+
+        for idx, item in enumerate(line_items, start=1):
+            hsn_code   = str(item.get("hsn_code") or "").strip()
+            qty        = float(item.get("quantity") or 0)
+            unit_price = float(item.get("unit_price") or 0)
+            desc       = item.get("description") or f"Line {idx}"
+            uom_code   = str(item.get("unit") or "EA").strip().upper()
+            line_num   = item.get("line_number") or idx
+
+            if not hsn_code:
+                raise ValueError(
+                    f"line_items[{idx}].hsn_code is missing — required to match/create PO line"
+                )
+
+            hsn_id = lookup_hsn_id(hsn_code)   # string hsn_id
+            key    = (hsn_id, qty, unit_price)
+            match  = existing_index.get(key)
+
+            if match:
+                log.info("[%s] Invoice line %d matched existing PO_LINE uuid=%s "
+                         "(hsn=%s, qty=%s, price=%s, desc='%s')",
+                         STEP, idx, match["id"], hsn_id, qty, unit_price, desc)
+                po_lines.append({
+                    "po_line_id":  match["id"],
+                    "line_number": match.get("line_number"),
+                    "description": match.get("item_description", desc),
+                    "quantity":    qty,
+                    "unit_price":  unit_price,
+                    "uom_id":      match.get("uom_id", ""),
+                })
+            else:
+                log.info("[%s] Invoice line %d has NO matching PO_LINE "
+                         "(hsn=%s, qty=%s, price=%s, desc='%s') — will create",
+                         STEP, idx, hsn_id, qty, unit_price, desc)
+                new_lines.append({
+                    "idx":       idx,
+                    "hsn_code":  hsn_code,
+                    "hsn_id":    hsn_id,
+                    "uom_code":  uom_code,
+                    "desc":      desc,
+                    "qty":       qty,
+                    "unit_price": unit_price,
+                    "line_num":  line_num,
+                })
+
+        # Create missing PO lines — fetch master refs only if needed
+        if new_lines:
+            log.info("[%s] %d new PO_LINE(s) to create for existing PO", STEP, len(new_lines))
+            po_date          = get_optional(static, "invoice_date") or today()
+            plant_uuid       = lookup_plant_id()
+            cost_center_uuid = lookup_cost_center_id()
+            project_uuid     = lookup_project_id()
+            profit_center_uuid = lookup_profit_center_id()
+            tax_rate_uuid    = lookup_tax_rate_id()
+            gl_uuid          = lookup_gl_account_id()
+
+            for nl in new_lines:
+                uom_id    = lookup_uom_id(nl["uom_code"])
+                item_uuid = lookup_item_id(nl["desc"])
+                log.info("[%s] Creating new PO_LINE (hsn=%s, qty=%s, price=%s, desc='%s')",
+                         STEP, nl["hsn_id"], nl["qty"], nl["unit_price"], nl["desc"])
+
+                created_pl = create_record(oid_pl, {
+                    "po_line_id":       gen_po_line_id(),
+                    "line_number":      int(nl["line_num"]),
+                    "hsn_id":           nl["hsn_id"],
+                    "uom_id":           uom_id,
+                    "ordered_quantity": nl["qty"],
+                    "unit_price":       nl["unit_price"],
+                    "qc_required_flag": False,
+                    "line_status":      "OPEN",
+                    "plant_ref":        plant_uuid,
+                    "cost_center_ref":  cost_center_uuid,
+                    "project_ref":      project_uuid,
+                    "profit_center_ref":profit_center_uuid,
+                    "gl_account_ref":   gl_uuid,
+                    "tax_rate_ref":     tax_rate_uuid,
+                    "item_ref":         item_uuid,
+                    "po_header_ref":    po_uuid,
+                    "effective_from":   po_date
+                }, table_name="PO_LINE")
+                line_uuid = created_pl["id"]
+                log.info("[%s] New PO_LINE created → line_uuid=%s", STEP, line_uuid)
+
+                po_lines.append({
+                    "po_line_id":  line_uuid,
+                    "line_number": int(nl["line_num"]),
+                    "description": nl["desc"],
+                    "quantity":    nl["qty"],
+                    "unit_price":  nl["unit_price"],
+                    "uom_id":      uom_id,
+                })
+
+        log.info("[%s] PO result → %d matched, %d newly created",
+                 STEP, len(po_lines) - len(new_lines), len(new_lines))
         return {
             "po_header_id": po_uuid,
             "po_number":    po_number,
@@ -204,8 +302,7 @@ def handle_po(
             "description": desc,
             "quantity":    qty,
             "unit_price":  unit_price,
-            "hsn_code":    hsn_code,
-            "uom_code":    uom_code,
+            "uom_id":      uom_id,      # already-resolved string uom_id (e.g. "UOM3")
         })
 
     return {
