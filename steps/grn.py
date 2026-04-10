@@ -94,18 +94,21 @@ def handle_grn(
         log.info("[%s] Creating GRN_LINE for grn_uuid=%s (desc=%s, qty=%s)",
                  STEP, grn_uuid, desc, qty)
         create_record(oid_gl, {
-            "grn_line_id":      grn_line_id_str,
-            "grn_line_number":  1,
-            "item_description": desc,
-            "uom_id":           uom_str,      # string uom_id
-            "received_qty":     qty,
-            "weight_uom":       weight_uom_str,  # string uom_id
-            "qc_required_flag": False,
-            "qc_result":        "ACCEPTED",
-            "grn_line_status":  "OPEN",
-            "grn_ref":          grn_uuid,     # UUID id of GRN_HEADER
-            "item_ref":         item_uuid,    # UUID id of ITEM
-            "effective_from":   grn_date
+            "grn_line_id":            grn_line_id_str,
+            "grn_line_number":        1,
+            "item_description":       desc,
+            "uom_id":                 uom_str,          # string uom_id
+            "received_qty":           qty,
+            "accepted_qty":           qty,               # QC accepted = received
+            "unit_price":             unit_price,
+            "total_received_amount":  total_amt,         # qty × unit_price
+            "weight_uom":            weight_uom_str,    # string uom_id
+            "qc_required_flag":       False,
+            "qc_result":              "ACCEPTED",
+            "grn_line_status":        "OPEN",
+            "grn_ref":                grn_uuid,         # UUID id of GRN_HEADER
+            "item_ref":               item_uuid,        # UUID id of ITEM
+            "effective_from":         grn_date
         }, table_name="GRN_LINE")
         log.info("[%s] GRN_LINE created for grn_uuid=%s", STEP, grn_uuid)
 

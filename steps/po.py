@@ -164,24 +164,27 @@ def handle_po(
                 log.info("[%s] Creating new PO_LINE (hsn=%s, qty=%s, price=%s, desc='%s')",
                          STEP, nl["hsn_id"], nl["qty"], nl["unit_price"], nl["desc"])
 
+                line_amt = nl["qty"] * nl["unit_price"]
                 created_pl = create_record(oid_pl, {
-                    "po_line_id":       gen_po_line_id(),
-                    "line_number":      int(nl["line_num"]),
-                    "hsn_id":           nl["hsn_id"],
-                    "uom_id":           uom_id,
-                    "ordered_quantity": nl["qty"],
-                    "unit_price":       nl["unit_price"],
-                    "qc_required_flag": False,
-                    "line_status":      "OPEN",
-                    "plant_ref":        plant_uuid,
-                    "cost_center_ref":  cost_center_uuid,
-                    "project_ref":      project_uuid,
-                    "profit_center_ref":profit_center_uuid,
-                    "gl_account_ref":   gl_uuid,
-                    "tax_rate_ref":     tax_rate_uuid,
-                    "item_ref":         item_uuid,
-                    "po_header_ref":    po_uuid,
-                    "effective_from":   po_date
+                    "po_line_id":        gen_po_line_id(),
+                    "line_number":       int(nl["line_num"]),
+                    "hsn_id":            nl["hsn_id"],
+                    "uom_id":            uom_id,
+                    "ordered_quantity":  nl["qty"],
+                    "unit_price":        nl["unit_price"],
+                    "line_amount":       line_amt,
+                    "total_invoiced_qty": nl["qty"],
+                    "qc_required_flag":  False,
+                    "line_status":       "OPEN",
+                    "plant_ref":         plant_uuid,
+                    "cost_center_ref":   cost_center_uuid,
+                    "project_ref":       project_uuid,
+                    "profit_center_ref": profit_center_uuid,
+                    "gl_account_ref":    gl_uuid,
+                    "tax_rate_ref":      tax_rate_uuid,
+                    "item_ref":          item_uuid,
+                    "po_header_ref":     po_uuid,
+                    "effective_from":    po_date
                 }, table_name="PO_LINE")
                 line_uuid = created_pl["id"]
                 log.info("[%s] New PO_LINE created → line_uuid=%s", STEP, line_uuid)
@@ -274,24 +277,27 @@ def handle_po(
         log.info("[%s] Creating PO_LINE %d (desc=%s, qty=%s, price=%s, hsn=%s)",
                  STEP, idx, desc, qty, unit_price, hsn_code)
 
+        line_amt = qty * unit_price
         created_pl = create_record(oid_pl, {
-            "po_line_id":       gen_po_line_id(),
-            "line_number":      int(line_num),
-            "hsn_id":           hsn_id,           # string hsn_id
-            "uom_id":           uom_id,           # string uom_id
-            "ordered_quantity": qty,
-            "unit_price":       unit_price,
-            "qc_required_flag": False,
-            "line_status":      "OPEN",
-            "plant_ref":        plant_uuid,       # UUID id of PLANT
-            "cost_center_ref":  cost_center_uuid, # UUID id of COST_CENTER
-            "project_ref":      project_uuid,     # UUID id of PROJECT_WBS
-            "profit_center_ref":profit_center_uuid,
-            "gl_account_ref":   gl_uuid,          # UUID id of GL_ACCOUNT
-            "tax_rate_ref":     tax_rate_uuid,    # UUID id of TAX_RATE
-            "item_ref":         item_uuid,        # UUID id of ITEM
-            "po_header_ref":    po_uuid,          # UUID id of PO_HEADER
-            "effective_from":   po_date
+            "po_line_id":        gen_po_line_id(),
+            "line_number":       int(line_num),
+            "hsn_id":            hsn_id,           # string hsn_id
+            "uom_id":            uom_id,           # string uom_id
+            "ordered_quantity":  qty,
+            "unit_price":        unit_price,
+            "line_amount":       line_amt,          # qty × unit_price
+            "total_invoiced_qty": qty,              # invoiced qty from this invoice
+            "qc_required_flag":  False,
+            "line_status":       "OPEN",
+            "plant_ref":         plant_uuid,       # UUID id of PLANT
+            "cost_center_ref":   cost_center_uuid, # UUID id of COST_CENTER
+            "project_ref":       project_uuid,     # UUID id of PROJECT_WBS
+            "profit_center_ref": profit_center_uuid,
+            "gl_account_ref":    gl_uuid,          # UUID id of GL_ACCOUNT
+            "tax_rate_ref":      tax_rate_uuid,    # UUID id of TAX_RATE
+            "item_ref":          item_uuid,        # UUID id of ITEM
+            "po_header_ref":     po_uuid,          # UUID id of PO_HEADER
+            "effective_from":    po_date
         }, table_name="PO_LINE")
         line_uuid = created_pl["id"]
         log.info("[%s] PO_LINE %d created → line_uuid=%s", STEP, idx, line_uuid)
